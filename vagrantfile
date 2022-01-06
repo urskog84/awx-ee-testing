@@ -1,0 +1,37 @@
+Vagrant.configure("2") do |config|
+  config.vm.provision "install_shared", type: "shell", path: "scripts/install.sh"
+  #config.ssh.insert_key = false
+
+
+  config.vm.define "podman" do  | podman |
+    podman.vm.box = "generic/rocky8"
+    podman.vm.hostname = "rocky-podman"
+    podman.vm.network "public_network"
+    podman.vm.synced_folder "./ee-bulder", "/home/vagrant/ee-bulder"
+    podman.vm.provision "installpodman", type: "shell",
+      inline: "dnf install -y podman"
+    podman.vm.provision "ee-build", type: "shell", path: "scripts/build_with_podman.sh"
+    podman.vm.provider "virtualbox" do |vb|
+      vb.name = "rocky-podman"
+      vb.gui = false
+      vb.memory = "2048"
+      vb.cpus = "2"
+    end
+  end
+
+  config.vm.define "docker" do  | docker |
+    docker.vm.box = "generic/rocky8"
+    docker.vm.hostname = "rocky-docker"
+    docker.vm.network "public_network"
+    docker.vm.synced_folder "./ee-bulder", "/home/vagrant/ee-bulder"
+    docker.vm.provision "shell", path: "scripts/install_docker.sh"
+    docker.vm.provision "ee-build", type: "shell", path: "scripts/build_with_docker.sh"
+    docker.vm.provider "virtualbox" do |vb|
+      vb.name = "rocky-docker"
+      vb.gui = false
+      vb.memory = "2048"
+      vb.cpus = "2"
+    end
+  end
+
+end
